@@ -120,4 +120,4 @@ as much a part of "vibe coding" as writing the first version:
 
 ## Repository
 
-Code is available at: `<GitHub URL to be added after push>`
+Code is available at: https://github.com/anirudhV90/GenAI-Week1
