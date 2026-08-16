@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -32,8 +34,50 @@ st.caption(
 st.sidebar.header("Filters")
 
 min_date, max_date = df["date"].min().date(), df["date"].max().date()
+
+# Quick-range presets anchored to the dataset's actual last date (not the
+# system clock) — the data currently ends before "today", so Streamlit's
+# built-in relative presets ("past week", "past 2 years") would otherwise
+# compute an end date past max_date and error out.
+QUICK_RANGES = {
+    "All time": None,
+    "Last 7 days": 7,
+    "Last 30 days": 30,
+    "Last 90 days": 90,
+    "Last 6 months": 182,
+    "Last 1 year": 365,
+    "Last 2 years": 730,
+}
+
+
+def _apply_quick_range():
+    days = QUICK_RANGES[st.session_state.quick_range]
+    if days is None:
+        st.session_state.date_range = (min_date, max_date)
+    else:
+        start = max(min_date, max_date - datetime.timedelta(days=days))
+        st.session_state.date_range = (start, max_date)
+
+
+st.sidebar.selectbox(
+    "Quick range (relative to latest data, not today)",
+    list(QUICK_RANGES.keys()),
+    key="quick_range",
+    on_change=_apply_quick_range,
+)
+
+# Allow picking dates a bit past the data's max so Streamlit's own built-in
+# range shortcuts (in the calendar popover) don't hard-error if used instead
+# of the quick-range selectbox above; filtering below naturally yields no
+# rows for any span past max_date.
+widget_max = max(max_date, datetime.date.today())
+
+st.session_state.setdefault("date_range", (min_date, max_date))
 date_range = st.sidebar.date_input(
-    "Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date
+    "Date range",
+    min_value=min_date,
+    max_value=widget_max,
+    key="date_range",
 )
 
 industries = sorted(df["industry"].unique())
